@@ -1,0 +1,11 @@
+[package]
+name = "hyperspank"
+version = "0.1.0"
+authors = ["Alan Stockwell <alan@efx.co.nz>"]
+
+[dependencies]
+hyper = "*"
+docopt = "*"
+docopt_macros = "*"
+rustc-serialize = "*"
+time = "*"
