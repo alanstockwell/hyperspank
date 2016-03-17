@@ -1,4 +1,3 @@
-#![feature(drain)]
 #![feature(plugin)]
 #![plugin(docopt_macros)]
 
@@ -11,7 +10,8 @@ use std::io::Read;
 use std::thread;
 use std::cmp;
 use std::sync::{Arc, Mutex};
-use docopt::Docopt;
+use std::time::Duration;
+//use docopt::Docopt;
 
 use hyper::Client;
 use hyper::header::Connection;
@@ -19,7 +19,6 @@ use hyper::header::Connection;
 
 docopt!(Args, "\
 Usage: hyperspank [options] <target>
-
 Options:
     -k, --keep-alive  Keep connection alive between bursts
     -c, --control-thread  Use an aggressive control thread to simulate a single hyperactive client
@@ -27,11 +26,10 @@ Options:
     -r <requests_per_thread>, --requests-per-thread <requests_per_thread>  The number of requests per thread (may be split over a number of bursts) [default: 100]
     -d <delay_duration>, --delay-duration <delay_duration>  The delay (in milliseconds) between requests on a thread [default: 0]
     -b <burst_size>, --burst-size <burst_size>  The number of requests a thread will send before a delay [default: 1]
-    -p <print_on_iteration>, --print-on-iteration <print_on_iteration>  The number of iterations before progress is echoed to the console [default: 1]
-",
+    -p <print_on_iteration>, --print-on-iteration <print_on_iteration>  The number of iterations before progress is echoed to the console [default: 1]",
 flag_requests_per_thread: u32,
 flag_burst_size: u32,
-flag_delay_duration: u32,
+flag_delay_duration: u64,
 flag_print_on_iteration: u32,
 flag_thread_count: u32
 );
@@ -74,7 +72,7 @@ fn main() {
         let keep_alive = args.flag_keep_alive;
         let requests_per_thread = args.flag_requests_per_thread;
         let burst_size = args.flag_burst_size;
-        let delay_duration = args.flag_delay_duration;
+        let delay_duration: u64 = args.flag_delay_duration;
         let print_on_iteration = args.flag_print_on_iteration;
 
         thread_vec.push(thread::spawn(move || { spank(
@@ -133,7 +131,7 @@ fn inner_spank(my_name: &str, keep_alive: &bool, client: &Client, target: &str) 
     smooth_sailing
 }
 
-fn spank(my_name: &str, target: &str, keep_alive: bool, reqs: u32, burst_size: u32, delay_duration: u32, print_on_iteration: u32) {
+fn spank(my_name: &str, target: &str, keep_alive: bool, reqs: u32, burst_size: u32, delay_duration: u64, print_on_iteration: u32) {
     let client = Client::new();
 
     let mut reqs_left = reqs;
@@ -165,7 +163,7 @@ fn spank(my_name: &str, target: &str, keep_alive: bool, reqs: u32, burst_size: u
 
         if smooth_sailing && reqs_left > 0  && delay_duration > 0 {
             println!("Thread {} sleeping...", my_name);
-            thread::sleep_ms(delay_duration);
+            thread::sleep(Duration::from_millis(delay_duration));
         } else {
             smooth_sailing = true;
         }
